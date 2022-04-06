@@ -1,6 +1,8 @@
 import requests
 import json
 import wave
+import datetime
+from os import system
 from time import sleep
 #変数定義
 api = "https://api.p2pquake.net/v2/history?limit=1"
@@ -8,6 +10,7 @@ eqinfo = "&codes=551"
 tsunamiinfo = "&codes=552"
 eewinfo = "&codes=554"
 eqdatan = tsunamidatan = dict
+tstatus = False
 # eqinfo = 551
 # tsunamiinfo = 552
 
@@ -25,25 +28,25 @@ def shindostr(value):
     if value == -1:
         return None
     elif value == 10:
-        return "震度1"
+        return "1"
     elif value == 20:
-        return "震度2"
+        return "2"
     elif value == 30:
-        return "震度3"
+        return "3"
     elif value == 40:
-        return "震度4"
+        return "4"
     elif value == 45:
-        return "震度5弱"
+        return "5弱"
     elif value == 50:
-        return "震度5強"
+        return "5強"
+    elif value == 55:
+        return "6弱"
     elif value == 60:
-        return "震度6弱"
-    elif value == 65:
-        return "震度6強"
+        return "6強"
     elif value == 70:
-        return "震度7"
+        return "7"
     elif value == -1:
-        return "震度の情報はありません"
+        return "情報なし"
 
 def parsejson_eq(data):
     # print(type(data))
@@ -51,7 +54,11 @@ def parsejson_eq(data):
     info = eq['earthquake']
     jouhou = eq['issue']['type']
     time = info['time']
-    timestr = time[11:13]+"時"+time[14:16]+"分頃"
+    # print(time)
+    time = datetime.datetime.strptime(time,"%Y/%m/%d %H:%M:%S")
+    # print(type(time))
+    # timestr = time[11:13]+"時"+time[14:16]+"分頃"
+    timestr = str(time.hour) + "時" + str(time.minute) + "分頃"
 
     hypocenter = info['hypocenter']
     depth = hypocenter['depth']
@@ -60,17 +67,17 @@ def parsejson_eq(data):
         
     maxshindo = info['maxScale']
     tsunami = info['domesticTsunami']
-    shindo70 = shindo65 = shindo60 = shindo50 = shindo45 = shindo40 = shindo30 = shindo20 = shindo10 = ""
+    shindo70 = shindo60 = shindo55 = shindo50 = shindo45 = shindo40 = shindo30 = shindo20 = shindo10 = ""
 
     kakuchi = eq['points']
     # 各地の震度情報
     for i in range(0,len(kakuchi)):
         if kakuchi[i]['scale'] == 70:
             shindo70 = shindo70 + kakuchi[i]['pref'] + kakuchi[i]['addr'] + ","
-        elif kakuchi[i]['scale'] == 65:
-            shindo65 = shindo65 + kakuchi[i]['pref'] + kakuchi[i]['addr'] + ","
         elif kakuchi[i]['scale'] == 60:
             shindo60 = shindo60 + kakuchi[i]['pref'] + kakuchi[i]['addr'] + ","
+        elif kakuchi[i]['scale'] == 55:
+            shindo55 = shindo55 + kakuchi[i]['pref'] + kakuchi[i]['addr'] + ","
         elif kakuchi[i]['scale'] == 50:
             shindo50 = shindo50 + kakuchi[i]['pref'] + kakuchi[i]['addr'] + ","
         elif kakuchi[i]['scale'] == 45:
@@ -114,26 +121,30 @@ def parsejson_eq(data):
         tsunamistr = "津波注意報が発表されています.今後の情報に警戒してください."
     elif tsunami == "Warning":
         tsunamistr = "津波予報が発表されています.今後の情報に警戒してください."
-    denbun1 = jouhoustr+"を受信しました.\n"+timestr+",最大"+shindostr(maxshindo)+"を観測する地震がありました.\n"+tsunamistr+"\n震源は"+hyponame+",深さ"+str(depth)+"km.地震の規模を示すマグニチュードは,"+str(magnitude)+"です."
+    
+    if jouhou == "ScalePrompt":
+        denbun1 = jouhoustr+"を受信しました.\n"+timestr+",最大震度"+shindostr(maxshindo)+"を観測する地震がありました.\n"+tsunamistr+"\n震源は現在調査中です."
+    else:
+        denbun1 = jouhoustr+"を受信しました.\n"+timestr+",最大震度"+shindostr(maxshindo)+"を観測する地震がありました.\n"+tsunamistr+"\n震源は"+hyponame+",深さ"+str(depth)+"km.地震の規模を示すマグニチュードは,"+str(magnitude)+"です."
     denbun2 = "各地の震度をお伝えします.\n"
     if shindo70 != "":
-        shindodenbun = "震度7を観測した地域は," + shindo70 + " 震度6強を観測した地域は," + shindo65 + " 震度6弱を観測した地域は," + shindo60 + " 震度5強を観測した地域は," + shindo50 + " 震度5弱を観測した地域は," + shindo45 + "震度4を観測した地域は," + shindo40 + " 震度3を観測した地域は," + shindo30
-    elif shindo65 != "":
-        shindodenbun = " 震度6強を観測した地域は," + shindo65 + " 震度6弱を観測した地域は," + shindo60 + " 震度5強を観測した地域は," + shindo50 + " 震度5弱を観測した地域は," + shindo45 + "震度4を観測した地域は," + shindo40 + " 震度3を観測した地域は," + shindo30
+        shindodenbun = "震度7を観測した地域は," + shindo70[0:len(shindo70)-1] + "です. 震度6強を観測した地域は," + shindo60[0:len(shindo60)-1] + "です. 震度6弱を観測した地域は," + shindo55[0:len(shindo55)-1] + "です. 震度5強を観測した地域は," + shindo50[0:len(shindo50)-1] + "です. 震度5弱を観測した地域は," + shindo45[0:len(shindo45)-1] + "です. 震度4を観測した地域は," + shindo40[0:len(shindo40)-1] + "です. 震度3を観測した地域は," + shindo30[0:len(shindo30)-1] + "です."
     elif shindo60 != "":
-        shindodenbun = " 震度6弱を観測した地域は," + shindo60 + " 震度5強を観測した地域は," + shindo50 + " 震度5弱を観測した地域は," + shindo45 + "震度4を観測した地域は," + shindo40 + " 震度3を観測した地域は," + shindo30
+        shindodenbun = " 震度6強を観測した地域は," + shindo60[0:len(shindo60)-1] + "です. 震度6弱を観測した地域は," + shindo55[0:len(shindo55)-1] + "です. 震度5強を観測した地域は," + shindo50[0:len(shindo50)-1] + "です. 震度5弱を観測した地域は," + shindo45[0:len(shindo45)-1] + "です. 震度4を観測した地域は," + shindo40[0:len(shindo40)-1] + "です. 震度3を観測した地域は," + shindo30[0:len(shindo30)-1] + "です."
+    elif shindo55 != "":
+        shindodenbun = "震度6弱を観測した地域は," + shindo55[0:len(shindo55)-1] + "です. 震度5強を観測した地域は," + shindo50[0:len(shindo50)-1] + "です. 震度5弱を観測した地域は," + shindo45[0:len(shindo45)-1] + "です. 震度4を観測した地域は," + shindo40 + "です. 震度3を観測した地域は," + shindo30[0:len(shindo30)-1] + "です."
     elif shindo50 != "":
-        shindodenbun = " 震度5強を観測した地域は," + shindo50 + " 震度5弱を観測した地域は," + shindo45 + "震度4を観測した地域は," + shindo40 + " 震度3を観測した地域は," + shindo30
+        shindodenbun = " 震度5強を観測した地域は," + shindo50[0:len(shindo50)-1] + "です. 震度5弱を観測した地域は," + shindo45[0:len(shindo45)-1] + "です. 震度4を観測した地域は," + shindo40[0:len(shindo40)-1] + "です. 震度3を観測した地域は," + shindo30[0:len(shindo30)-1] + "です."
     elif shindo45 != "":
-        shindodenbun = " 震度5弱を観測した地域は," + shindo45 + "震度4を観測した地域は," + shindo40 + " 震度3を観測した地域は," + shindo30
+        shindodenbun = " 震度5弱を観測した地域は," + shindo45[0:len(shindo45)-1] + "です. 震度4を観測した地域は," + shindo40[0:len(shindo40)-1] + "です. 震度3を観測した地域は," + shindo30[0:len(shindo30)-1] + "です."
     elif shindo40 != "":
-        shindodenbun = "震度4を観測した地域は," + shindo40 + " 震度3を観測した地域は," + shindo30 + " 震度2を観測した地域は," + shindo20 + " 震度1を観測した地域は," + shindo10
+        shindodenbun = "震度4を観測した地域は," + shindo40[0:len(shindo40)-1] + "です. 震度3を観測した地域は," + shindo30[0:len(shindo30)-1] + "です."
     elif shindo30 != "":
-        shindodenbun = " 震度3を観測した地域は," + shindo30 + " 震度2を観測した地域は," + shindo20 + " 震度1を観測した地域は," + shindo10
+        shindodenbun = " 震度3を観測した地域は," + shindo30[0:len(shindo30)-1] + "です. 震度2を観測した地域は," + shindo20[0:len(shindo20)-1] + "です. 震度1を観測した地域は," + shindo10[0:len(shindo10)-1] + "です."
     elif shindo20 != "":
-        shindodenbun = " 震度2を観測した地域は," + shindo20 + " 震度1を観測した地域は," + shindo10
+        shindodenbun = " 震度2を観測した地域は," + shindo20[0:len(shindo20)-1] + "です. 震度1を観測した地域は," + shindo10[0:len(shindo10)-1] + "です."
     elif shindo10 != "":
-        shindodenbun = " 震度1を観測した地域は," + shindo10
+        shindodenbun = " 震度1を観測した地域は," + shindo10[0:len(shindo10)-1] + "です."
     # shindodenbun = ["震度7を観測した地域は," + shindo70, "震度6強を観測した地域は," + shindo65, "震度6弱を観測した地域は," + shindo60, "震度5強を観測した地域は" + shindo50, "震度5弱を観測した地域は," + shindo45, "震度4を観測した地域は," + shindo40, "震度3を観測した地域は," + shindo30]
     
     print(denbun1)
@@ -141,10 +152,52 @@ def parsejson_eq(data):
     generate_wav(denbun1,8,"overview.wav")
     generate_wav(str(denbun2 + shindodenbun +"以上,地震情報をお伝えしました."),8,"shindo.wav")
 
-    print()
+    # print()
+    play()
 
 def parsejson_tsunami(data):
-    None
+    global tstatus
+    tmajorwarn = ""
+    twarn = ""
+    twatch = ""
+    if data == []:
+        return
+    data = data[0]
+    cancelled = data['cancelled']
+
+    if cancelled:
+        denbun1 = "津波予報は解除されました."
+        generate_wav(denbun1,8,"toverview.wav")
+        return
+    elif tstatus:
+        denbun1 = "津波予報が更新されました."
+    else:
+        denbun1 = "津波予報が発表されました."
+        tstatus = True
+    area = data['areas']
+    for i in range(len(area)):
+        if area[i]['grade'] == "MajorWarning":
+            tmajorwarn = tmajorwarn + area[i]['name'] + ","
+        elif area[i]['grade'] == "Warning":
+            twarn = twarn + area[i]['name'] + ","
+        elif area[i]['grade'] == "Watch":
+            twatch = twatch + area[i]['name'] + ","
+    
+    denbun2 = ""
+
+    print("大津波警報: " + tmajorwarn + "\n津波警報: " + twarn + "\n津波注意報: " + twatch)
+    if tmajorwarn != "":
+        denbun2 = denbun2 + "大津波警報が," + tmajorwarn[0:len(tmajorwarn)-1] + "に,発表されています."
+    
+    if twarn != "":
+        denbun2 = denbun2 + "津波警報が," + twarn[0:len(twarn)-1] + "に,発表されています."
+    
+    if twatch != "":
+        denbun2 = denbun2 + "津波注意報が," + twatch[0:len(twatch)-1] + "に,発表されています."
+    
+    denbun2 = denbun2 + "対象地域にお住まいのかたは,直ちに海岸から離れてください."
+    generate_wav(denbun1,8,"toverview.wav")
+    generate_wav(denbun2,8,"tsunami.wav")
 
 # 更新チェック
 def datacheck():
@@ -153,7 +206,7 @@ def datacheck():
     eqdatao = eqdatan
     eqdatan = get_latest_data(eqinfo)
     tsunamidatao = tsunamidatan
-    tsunamidatan = None#get_latest_data(tsunamiinfo)
+    tsunamidatan = get_latest_data(tsunamiinfo)
 
     # 新旧比較
     # 0=更新なし 1=更新あり
@@ -165,7 +218,7 @@ def datacheck():
     if tsunamidatao == tsunamidatan:
         tsunamiupdate = 0
     else:
-        tsunamiupdate = 0
+        tsunamiupdate = 1
     
 
 def gentalk(text):
@@ -197,9 +250,14 @@ def generate_wav(text, speaker=8, filepath='./audio.wav'):
     wf.writeframes(response2.content)
     wf.close()
 
+def play():
+    system("afplay ./overview.wav")
+    system("afplay ./shindo.wav")
+
 # mainloop
 while 1:
     datacheck()
+    print("Status: EQ=" + str(equpdate) + " TSUNAMI=" + str(tsunamiupdate))
     if equpdate==1:
         parsejson_eq(eqdatan)
     if tsunamiupdate==1:
