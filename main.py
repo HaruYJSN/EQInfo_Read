@@ -112,7 +112,7 @@ def parsejson_eq(data):
                 shindo20 = shindo20 + kakuchi[i]['pref'] + kakuchi[i]['addr'] + ","
             elif kakuchi[i]['scale'] == 10:
                 shindo10 = shindo10 + kakuchi[i]['pref'] + kakuchi[i]['addr'] + ","
-            print(kakuchi[i]['isArea'])
+            #print(kakuchi[i]['isArea'])
 
     #print(eq['points'])
     # 電文作成
