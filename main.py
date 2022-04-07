@@ -173,9 +173,9 @@ def parsejson_eq(data):
     
     print(denbun1)
     print(shindodenbun)
-    generate_wav_voicevox(denbun1,8,"overview.wav")
+    gentalk(denbun1,8,"overview.wav")
     if jouhou != "Destination":
-        generate_wav_voicevox(str(denbun2 + shindodenbun +"以上,地震情報をお伝えしました."),8,"shindo.wav")
+        gentalk(str(denbun2 + shindodenbun +"以上,地震情報をお伝えしました."),8,"shindo.wav")
 
     # print()
     play("overview.wav")
@@ -194,7 +194,8 @@ def parsejson_tsunami(data):
 
     if cancelled:
         denbun1 = "津波予報は解除されました."
-        generate_wav_voicevox(denbun1,8,"toverview.wav")
+        gentalk(denbun1,8,"toverview.wav")
+        tstatus = False
         return
     elif tstatus:
         denbun1 = "津波予報が更新されました."
@@ -223,8 +224,8 @@ def parsejson_tsunami(data):
         denbun2 = denbun2 + "津波注意報が," + twatch[0:len(twatch)-1] + "に,発表されています."
     
     denbun2 = denbun2 + "対象地域にお住まいのかたは,直ちに海岸から離れてください."
-    generate_wav_voicevox(denbun1,8,"toverview.wav")
-    generate_wav_voicevox(denbun2,8,"tsunami.wav")
+    gentalk(denbun1,8,"toverview.wav")
+    gentalk(denbun2,8,"tsunami.wav")
 
 # 更新チェック
 def datacheck():
@@ -255,7 +256,7 @@ def gentalk(text, speaker=8, filepath='./audio.wav'):
         generate_wav_openjtalk(text, filepath)
 
 def generate_wav_openjtalk(text, filepath):
-    system("echo " + text.replace("\n", " ") + "open_jtalk -x /usr/local/Cellar/open-jtalk/1.11/dic/ /usr/local/Cellar/open-jtalk/1.11/voice/mei/mei_normal.htsvoice -r 1.4 -g 11 -ow " + filepath)
+    system("echo " + text.replace("\n", " ") + "|open_jtalk -x /usr/local/Cellar/open-jtalk/1.11/dic/ -m /usr/local/Cellar/open-jtalk/1.11/voice/mei/mei_normal.htsvoice -r 1.4 -g 11 -ow " + filepath)
 
 def generate_wav_voicevox(text, speaker, filepath):
     host = 'localhost'
