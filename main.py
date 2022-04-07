@@ -2,6 +2,7 @@ import requests
 import json
 import wave
 import datetime
+from playsound import playsound
 from os import system
 from time import sleep
 #変数定義
@@ -11,6 +12,7 @@ tsunamiinfo = "&codes=552"
 eewinfo = "&codes=554"
 eqdatan = tsunamidatan = dict
 tstatus = False
+engine = 1 # VoiceVox = 0, OpenJTalk = 1
 # eqinfo = 551
 # tsunamiinfo = 552
 
@@ -45,7 +47,7 @@ def shindostr(value):
         return "6強"
     elif value == 70:
         return "7"
-    elif value == -1:
+    elif value < 0:
         return "情報なし"
 
 def parsejson_eq(data):
@@ -67,29 +69,50 @@ def parsejson_eq(data):
         
     maxshindo = info['maxScale']
     tsunami = info['domesticTsunami']
-    shindo70 = shindo60 = shindo55 = shindo50 = shindo45 = shindo40 = shindo30 = shindo20 = shindo10 = ""
+    shindo70 = shindo60 = shindo55 = shindo50 = shindo45 = shindo40 = shindo30 = shindo20 = shindo10 = shindodenbun = ""
 
     kakuchi = eq['points']
     # 各地の震度情報
     for i in range(0,len(kakuchi)):
-        if kakuchi[i]['scale'] == 70:
-            shindo70 = shindo70 + kakuchi[i]['pref'] + kakuchi[i]['addr'] + ","
-        elif kakuchi[i]['scale'] == 60:
-            shindo60 = shindo60 + kakuchi[i]['pref'] + kakuchi[i]['addr'] + ","
-        elif kakuchi[i]['scale'] == 55:
-            shindo55 = shindo55 + kakuchi[i]['pref'] + kakuchi[i]['addr'] + ","
-        elif kakuchi[i]['scale'] == 50:
-            shindo50 = shindo50 + kakuchi[i]['pref'] + kakuchi[i]['addr'] + ","
-        elif kakuchi[i]['scale'] == 45:
-            shindo45 = shindo45 + kakuchi[i]['pref'] + kakuchi[i]['addr'] + ","
-        elif kakuchi[i]['scale'] == 40:
-            shindo40 = shindo40 + kakuchi[i]['pref'] + kakuchi[i]['addr'] + ","
-        elif kakuchi[i]['scale'] == 30:
-            shindo30 = shindo30 + kakuchi[i]['pref'] + kakuchi[i]['addr'] + ","
-        elif kakuchi[i]['scale'] == 20:
-            shindo20 = shindo20 + kakuchi[i]['pref'] + kakuchi[i]['addr'] + ","
-        elif kakuchi[i]['scale'] == 10:
-            shindo10 = shindo10 + kakuchi[i]['pref'] + kakuchi[i]['addr'] + ","
+        if jouhou == "ScalePrompt":
+            if kakuchi[i]['scale'] == 70:
+                shindo70 = shindo70 + kakuchi[i]['addr'] + ","
+            elif kakuchi[i]['scale'] == 60:
+                shindo60 = shindo60 + kakuchi[i]['addr'] + ","
+            elif kakuchi[i]['scale'] == 55:
+                shindo55 = shindo55 + kakuchi[i]['addr'] + ","
+            elif kakuchi[i]['scale'] == 50:
+                shindo50 = shindo50 + kakuchi[i]['addr'] + ","
+            elif kakuchi[i]['scale'] == 45:
+                shindo45 = shindo45 + kakuchi[i]['addr'] + ","
+            elif kakuchi[i]['scale'] == 40:
+                shindo40 = shindo40 + kakuchi[i]['addr'] + ","
+            elif kakuchi[i]['scale'] == 30:
+                shindo30 = shindo30 + kakuchi[i]['addr'] + ","
+            elif kakuchi[i]['scale'] == 20:
+                shindo20 = shindo20 + kakuchi[i]['addr'] + ","
+            elif kakuchi[i]['scale'] == 10:
+                shindo10 = shindo10 + kakuchi[i]['addr'] + ","
+        else:
+            if kakuchi[i]['scale'] == 70:
+                shindo70 = shindo70 + kakuchi[i]['pref'] + kakuchi[i]['addr'] + ","
+            elif kakuchi[i]['scale'] == 60:
+                shindo60 = shindo60 + kakuchi[i]['pref'] + kakuchi[i]['addr'] + ","
+            elif kakuchi[i]['scale'] == 55:
+                shindo55 = shindo55 + kakuchi[i]['pref'] + kakuchi[i]['addr'] + ","
+            elif kakuchi[i]['scale'] == 50:
+                shindo50 = shindo50 + kakuchi[i]['pref'] + kakuchi[i]['addr'] + ","
+            elif kakuchi[i]['scale'] == 45:
+                shindo45 = shindo45 + kakuchi[i]['pref'] + kakuchi[i]['addr'] + ","
+            elif kakuchi[i]['scale'] == 40:
+                shindo40 = shindo40 + kakuchi[i]['pref'] + kakuchi[i]['addr'] + ","
+            elif kakuchi[i]['scale'] == 30:
+                shindo30 = shindo30 + kakuchi[i]['pref'] + kakuchi[i]['addr'] + ","
+            elif kakuchi[i]['scale'] == 20:
+                shindo20 = shindo20 + kakuchi[i]['pref'] + kakuchi[i]['addr'] + ","
+            elif kakuchi[i]['scale'] == 10:
+                shindo10 = shindo10 + kakuchi[i]['pref'] + kakuchi[i]['addr'] + ","
+            print(kakuchi[i]['isArea'])
 
     #print(eq['points'])
     # 電文作成
@@ -97,7 +120,6 @@ def parsejson_eq(data):
         jouhoustr = "震度速報"
     elif jouhou == "Destination":
         jouhoustr = "震源に関する情報"
-        return
     elif jouhou == "ScaleAndDestination":
         jouhoustr = "震源･震度に関する情報"
     elif jouhou == "DetailScale":
@@ -124,6 +146,8 @@ def parsejson_eq(data):
     
     if jouhou == "ScalePrompt":
         denbun1 = jouhoustr+"を受信しました.\n"+timestr+",最大震度"+shindostr(maxshindo)+"を観測する地震がありました.\n"+tsunamistr+"\n震源は現在調査中です."
+    elif jouhou =="Destination":
+        denbun1 = jouhoustr+"を受信しました.\n"+timestr+",地震がありました.\n"+tsunamistr+"\n震源は"+hyponame+",深さ"+str(depth)+"km.地震の規模を示すマグニチュードは,"+str(magnitude)+"です.以上,地震情報をお伝えしました."
     else:
         denbun1 = jouhoustr+"を受信しました.\n"+timestr+",最大震度"+shindostr(maxshindo)+"を観測する地震がありました.\n"+tsunamistr+"\n震源は"+hyponame+",深さ"+str(depth)+"km.地震の規模を示すマグニチュードは,"+str(magnitude)+"です."
     denbun2 = "各地の震度をお伝えします.\n"
@@ -149,11 +173,14 @@ def parsejson_eq(data):
     
     print(denbun1)
     print(shindodenbun)
-    generate_wav(denbun1,8,"overview.wav")
-    generate_wav(str(denbun2 + shindodenbun +"以上,地震情報をお伝えしました."),8,"shindo.wav")
+    generate_wav_voicevox(denbun1,8,"overview.wav")
+    if jouhou != "Destination":
+        generate_wav_voicevox(str(denbun2 + shindodenbun +"以上,地震情報をお伝えしました."),8,"shindo.wav")
 
     # print()
-    play()
+    play("overview.wav")
+    if jouhou != "Destination":
+        play("shindo.wav")
 
 def parsejson_tsunami(data):
     global tstatus
@@ -167,7 +194,7 @@ def parsejson_tsunami(data):
 
     if cancelled:
         denbun1 = "津波予報は解除されました."
-        generate_wav(denbun1,8,"toverview.wav")
+        generate_wav_voicevox(denbun1,8,"toverview.wav")
         return
     elif tstatus:
         denbun1 = "津波予報が更新されました."
@@ -196,8 +223,8 @@ def parsejson_tsunami(data):
         denbun2 = denbun2 + "津波注意報が," + twatch[0:len(twatch)-1] + "に,発表されています."
     
     denbun2 = denbun2 + "対象地域にお住まいのかたは,直ちに海岸から離れてください."
-    generate_wav(denbun1,8,"toverview.wav")
-    generate_wav(denbun2,8,"tsunami.wav")
+    generate_wav_voicevox(denbun1,8,"toverview.wav")
+    generate_wav_voicevox(denbun2,8,"tsunami.wav")
 
 # 更新チェック
 def datacheck():
@@ -221,10 +248,16 @@ def datacheck():
         tsunamiupdate = 1
     
 
-def gentalk(text):
-    None
+def gentalk(text, speaker=8, filepath='./audio.wav'):
+    if engine == 0:
+        generate_wav_voicevox(text, speaker, filepath)
+    elif engine == 1:
+        generate_wav_openjtalk(text, filepath)
 
-def generate_wav(text, speaker=8, filepath='./audio.wav'):
+def generate_wav_openjtalk(text, filepath):
+    system("echo " + text.replace("\n", " ") + "open_jtalk -x /usr/local/Cellar/open-jtalk/1.11/dic/ /usr/local/Cellar/open-jtalk/1.11/voice/mei/mei_normal.htsvoice -r 1.4 -g 11 -ow " + filepath)
+
+def generate_wav_voicevox(text, speaker, filepath):
     host = 'localhost'
     port = 50021
     params = (
@@ -250,9 +283,11 @@ def generate_wav(text, speaker=8, filepath='./audio.wav'):
     wf.writeframes(response2.content)
     wf.close()
 
-def play():
-    system("afplay ./overview.wav")
-    system("afplay ./shindo.wav")
+def play(file):
+    playsound(file)
+    sleep(0.5)
+    # system("afplay ./overview.wav")
+    # system("afplay ./shindo.wav")
 
 # mainloop
 while 1:
